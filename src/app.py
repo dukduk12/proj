@@ -10,7 +10,8 @@ from src.logging_config import setup_logger
 from src.email_client import fetch_emails_list, download_pdf_for_email
 from src.pdf_parser import extract_text_from_pdf
 from src.summarizer import summarize_text
-from src.word_cloud_gen import generate_word_cloud
+from src.word_cloud_gen import extract_tfidf_keywords, generate_tfidf_chart
+from src.db_client import ChromaClient
 
 # Initialize logger
 setup_logger()
@@ -201,8 +202,12 @@ if st.session_state.email_list is not None and len(st.session_state.email_list) 
                                             continue
                                             
                                         summary = summarize_text(text)
-                                        wc_filename = f"wordcloud_{e_id}_{pdf_path.name}.png"
-                                        wc_path = generate_word_cloud(text, output_filename=wc_filename)
+                                        wc_filename = f"tfidf_{e_id}_{pdf_path.name}.png"
+                                        
+                                        # TF-IDF 차트 생성 로직으로 변경
+                                        keywords_dict = extract_tfidf_keywords({pdf_path.name: text})
+                                        keywords = keywords_dict.get(pdf_path.name, [])
+                                        wc_path = generate_tfidf_chart(keywords, title=pdf_path.name, output_filename=wc_filename)
                                         
                                         results.append({
                                             "file": pdf_path.name,
@@ -226,4 +231,30 @@ if st.session_state.email_list is not None and len(st.session_state.email_list) 
                             if results:
                                 save_processed_data(msg_id, results)
                                 st.rerun()
+                                
+                    # --- Similar Emails Recommendation ---
+                    if msg_id in processed_data:
+                        st.markdown("##### 💡 과거 유사 업무 메일 추천")
+                        results = processed_data[msg_id]
+                        if results and 'summary' in results[0]:
+                            search_text = f"제목: {email_meta['subject']}\n요약: {results[0]['summary']}"
+                            
+                            with st.spinner("유사한 과거 메일을 검색하는 중..."):
+                                chroma_client = ChromaClient()
+                                similar_emails = chroma_client.query_similar(search_text, n_results=3)
+                                
+                                has_recommendation = False
+                                if similar_emails:
+                                    for idx, sim in enumerate(similar_emails):
+                                        has_recommendation = True
+                                        distance = sim.get('distance', 0.0)
+                                        similarity = max(0, 100 - (distance * 100))
+                                        
+                                        st.info(f"**{sim['metadata'].get('title', '제목 없음')}** (유사도: {similarity:.1f}%)\n\n"
+                                                f"📅 *날짜:* {sim['metadata'].get('date', '')} | 👤 *보낸사람:* {sim['metadata'].get('sender', '')}\n\n"
+                                                f"{sim['metadata'].get('summary', '')}")
+                                
+                                if not has_recommendation:
+                                    st.write("유사한 과거 메일이 없습니다.")
+                                    
                 st.markdown("---")
