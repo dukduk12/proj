@@ -13,6 +13,8 @@ from src.summarizer import summarize_text
 from src.word_cloud_gen import generate_word_cloud
 from src.tfidf_anlayzer import extract_tfidf_keywords, generate_tfidf_chart
 from src.db_client import ChromaClient
+from src.tfidf_analyzer import extract_tfidf_keywords, generate_tfidf_chart
+from src.network_viz import build_and_render_network
 
 # Initialize logger
 setup_logger()
@@ -269,3 +271,44 @@ if st.session_state.email_list is not None and len(st.session_state.email_list) 
                                     st.write("유사한 과거 메일이 없습니다.")
                                     
                 st.markdown("---")
+
+            # --- 선택 메일 전체 비교: TF-IDF + 네트워크 ---
+            all_texts = {}
+            sender_docs_net = {}
+            for em in selected_emails:
+                mid = em.get("message_id", em["id"])
+                for item in processed_data.get(mid, []):
+                    if item.get("text") and "error" not in item:
+                        key = f"{em['subject'][:25]} / {item.get('file', '본문')}"
+                        all_texts[key] = item["text"]
+                        sender_docs_net.setdefault(em["sender"], []).append({
+                            "file": item.get("file", "본문"),
+                            "text": item["text"],
+                            "email_subject": em["subject"],
+                            "email_date": em["date"],
+                        })
+
+            tfidf_results = extract_tfidf_keywords(all_texts) if all_texts else {}
+
+            if tfidf_results:
+                st.header("📊 TF-IDF 핵심 키워드 비교")
+                st.caption(f"선택한 {len(tfidf_results)}개 문서 동시 비교 — 각 문서에서만 특징적인 단어 추출")
+                cols = st.columns(min(len(tfidf_results), 2))
+                for idx, (doc_name, keywords) in enumerate(tfidf_results.items()):
+                    with cols[idx % 2]:
+                        safe = "".join(c if c.isalnum() else "_" for c in doc_name[:20])
+                        chart_path = generate_tfidf_chart(
+                            keywords, title=doc_name, output_filename=f"tfidf_cmp_{idx}_{safe}.png"
+                        )
+                        if chart_path and Path(chart_path).exists():
+                            st.image(str(chart_path), caption=doc_name, use_container_width=True)
+
+            if sender_docs_net:
+                st.header("🕸️ 업무 관계 네트워크")
+                st.caption("● 발신자  ■ PDF — 점선은 내용 유사도, 색깔은 업무 클러스터 | 첫 실행 시 모델 다운로드 ~400MB")
+                with st.spinner("임베딩 계산 중... (문서 수에 따라 10~30초)"):
+                    net_fig = build_and_render_network(sender_docs_net, tfidf_results)
+                if net_fig:
+                    st.plotly_chart(net_fig, use_container_width=True)
+                else:
+                    st.info("네트워크를 생성하기에 데이터가 부족합니다.")

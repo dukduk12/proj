@@ -7,7 +7,18 @@ x-airflow-common: &airflow-common
     AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
     AIRFLOW__CORE__LOAD_EXAMPLES: "false"
     CHROMA_HOST: chromadb
-    _PIP_ADDITIONAL_REQUIREMENTS: "chromadb-client google-genai pymupdf python-dotenv loguru"
+    _PIP_ADDITIONAL_REQUIREMENTS: >-
+      chromadb>=1.5.8
+      google-genai>=1.73.1
+      loguru>=0.7.3
+      matplotlib>=3.10.9
+      openai>=2.32.0
+      pandas>=3.0.2
+      pydantic-settings>=2.14.0
+      pymupdf>=1.27.2.3
+      python-dotenv>=1.2.2
+      scikit-learn>=1.8.0
+      wordcloud>=1.9.6
   volumes:
     - ./dags:/opt/airflow/dags
     - ./logs:/opt/airflow/logs
@@ -76,6 +87,6 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./data/chroma_db:/chroma/chroma
+      - ./data/chroma_db:/data
     environment:
       - IS_PERSISTENT=TRUE
