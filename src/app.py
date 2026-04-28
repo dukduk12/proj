@@ -10,6 +10,8 @@ from src.logging_config import setup_logger
 from src.email_client import fetch_emails_list, download_pdf_for_email
 from src.pdf_parser import extract_text_from_pdf
 from src.summarizer import summarize_text
+from src.word_cloud_gen import generate_word_cloud
+from src.tfidf_anlayzer import extract_tfidf_keywords, generate_tfidf_chart
 from src.db_client import ChromaClient
 from src.tfidf_analyzer import extract_tfidf_keywords, generate_tfidf_chart
 from src.network_viz import build_and_render_network
@@ -56,6 +58,8 @@ def save_processed_data(msg_id, results):
         new_item = item.copy()
         if 'wc_path' in new_item and new_item['wc_path']:
             new_item['wc_path'] = str(new_item['wc_path'])
+        if 'tfidf_path' in new_item and new_item['tfidf_path']:
+            new_item['tfidf_path'] = str(new_item['tfidf_path'])
         serialized_results.append(new_item)
         
     data[msg_id] = serialized_results
@@ -186,6 +190,9 @@ if st.session_state.email_list is not None and len(st.session_state.email_list) 
                                     if item.get('wc_path') and Path(item['wc_path']).exists():
                                         st.image(item['wc_path'], caption=f"워드 클라우드 - {item.get('file', '문서')}")
                                         
+                                    if item.get('tfidf_path') and Path(item['tfidf_path']).exists():
+                                        st.image(item['tfidf_path'], caption=f"TF-IDF 핵심 키워드 - {item.get('file', '문서')}")
+                                        
                                     with st.popover("원본 텍스트 보기"):
                                         st.text(item['text'])
                     else:
@@ -203,18 +210,23 @@ if st.session_state.email_list is not None and len(st.session_state.email_list) 
                                             continue
                                             
                                         summary = summarize_text(text)
-                                        wc_filename = f"tfidf_{e_id}_{pdf_path.name}.png"
                                         
-                                        # TF-IDF 차트 생성 로직으로 변경
+                                        # 워드 클라우드 생성
+                                        wc_filename = f"wordcloud_{e_id}_{pdf_path.name}.png"
+                                        wc_path = generate_word_cloud(text, output_filename=wc_filename)
+                                        
+                                        # TF-IDF 차트 생성
+                                        tfidf_filename = f"tfidf_{e_id}_{pdf_path.name}.png"
                                         keywords_dict = extract_tfidf_keywords({pdf_path.name: text})
                                         keywords = keywords_dict.get(pdf_path.name, [])
-                                        wc_path = generate_tfidf_chart(keywords, title=pdf_path.name, output_filename=wc_filename)
+                                        tfidf_path = generate_tfidf_chart(keywords, title=pdf_path.name, output_filename=tfidf_filename)
                                         
                                         results.append({
                                             "file": pdf_path.name,
                                             "text": text,
                                             "summary": summary,
-                                            "wc_path": wc_path
+                                            "wc_path": wc_path,
+                                            "tfidf_path": tfidf_path
                                         })
                             else:
                                 text = email_meta.get("body_snippet", "")
