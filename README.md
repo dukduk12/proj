@@ -1,87 +1,187 @@
-# 📧 업무 메일 PDF 분석 및 추천 시스템
+# 📧 Business Email PDF Analysis & Recommendation System
 
-Airflow를 활용한 자동 데이터 파이프라인과 Gemini AI를 기반으로 업무 이메일과 첨부된 PDF 문서를 요약하고, Chroma DB를 통해 과거 유사 업무 메일을 추천해주는 종합 시스템입니다.
+> **Project Presentation (PPT)**
+> [View Presentation Slides](https://docs.google.com/presentation/d/10cDAfyUDkmXcXXc1y-ilhWFxBKG5liBP/edit?usp=drive_link&ouid=117197231862834975531&rtpof=true&sd=true)
 
-## 🚀 주요 기능
-- **이메일 자동 파이프라인 (Airflow)**: 매일 지정된 키워드(`[업무 협조]` 등)의 메일을 스크래핑하여 PDF를 파싱하고 AI로 요약한 뒤, 벡터(Vector) 데이터로 변환해 Chroma DB에 자동 적재합니다.
-- **AI 분석 및 TF-IDF 차트 (Streamlit)**: 수신된 메일을 웹 UI에서 확인하고 개별 분석할 수 있으며, TF-IDF를 이용한 핵심 키워드 막대그래프를 생성합니다.
-- **유사 메일 추천**: 현재 분석 중인 메일과 가장 유사도(Cosine Similarity)가 높은 과거 메일 3개를 추천해 줍니다.
-- **DB 전용 뷰어**: 백그라운드(Airflow)에서 수집된 방대한 메일 DB를 웹 화면에서 손쉽게 조회하고 임베딩 벡터 수치까지 확인할 수 있습니다.
+![Python](https://img.shields.io/badge/Python-3.12-blue)
+![Streamlit](https://img.shields.io/badge/Streamlit-App-red)
+![Airflow](https://img.shields.io/badge/Apache-Airflow-orange)
+![ChromaDB](https://img.shields.io/badge/VectorDB-Chroma-green)
+![Gemini](https://img.shields.io/badge/AI-Gemini-purple)
 
----
+## Overview
 
-## 🛠 기술 스택
-- **언어 및 패키지 관리**: Python 3.12, `uv`
-- **웹 대시보드 (UI)**: Streamlit
-- **데이터 파이프라인**: Apache Airflow, Docker Compose
-- **데이터베이스**: Chroma DB (Vector DB), PostgreSQL (Airflow 메타데이터)
-- **AI & ML**: Google Gemini API (`gemini-1.5-flash` 요약, `text-embedding-004` 임베딩), scikit-learn (TF-IDF)
+This project is an automated business email analysis and recommendation system built with Apache Airflow, Google Gemini AI, Streamlit, and Chroma DB.
+
+The system automatically collects business emails, extracts text from attached PDF files, summarizes the content using Gemini AI, stores the results as vector embeddings, and recommends similar historical emails based on semantic similarity.
 
 ---
 
-## ⚙️ 사전 준비사항 (Prerequisites)
+## Key Features
 
-1. **Docker 및 Docker Compose**가 설치되어 있어야 합니다.
-2. 빠르고 쾌적한 패키지 관리를 위해 **`uv`** 가 설치되어 있어야 합니다.
-3. 프로젝트 루트(최상위) 디렉토리에 **`.env`** 파일을 생성하고 다음 정보를 기입해야 합니다.
-   ```ini
-   # .env 예시
-   GEMINI_API_KEY=당신의_제미나이_API_키
-   IMAP_SERVER=imap.gmail.com
-   EMAIL_ACCOUNT=당신의_이메일@gmail.com
-   EMAIL_PASSWORD=앱_비밀번호
-   ```
+* Automated email collection pipeline using Apache Airflow
+* PDF text extraction from email attachments
+* AI-powered email and PDF summarization with Google Gemini
+* TF-IDF keyword visualization in Streamlit
+* Similar email recommendation using Cosine Similarity
+* Vector-based semantic search with Chroma DB
+* Dedicated Chroma DB viewer for inspecting stored email data
 
 ---
 
-## 🏃‍♂️ 실행 방법 (How to Run)
+## Tech Stack
 
-### 1. 백그라운드 인프라 실행 (Airflow + Chroma DB)
-데이터베이스와 스케줄러 환경을 도커로 띄웁니다.
+### Language & Package Management
+
+* Python 3.12
+* uv
+
+### Dashboard
+
+* Streamlit
+
+### Data Pipeline
+
+* Apache Airflow
+* Docker Compose
+
+### Database
+
+* Chroma DB
+* PostgreSQL
+
+### AI & Machine Learning
+
+* Google Gemini API
+
+  * gemini-1.5-flash for summarization
+  * text-embedding-004 for embeddings
+* scikit-learn
+
+  * TF-IDF
+  * Cosine Similarity
+
+---
+
+## Prerequisites
+
+Before running this project, make sure the following tools are installed:
+
+* Docker
+* Docker Compose
+* uv
+
+Create a `.env` file in the project root directory.
+
+```ini
+GEMINI_API_KEY=your_gemini_api_key
+IMAP_SERVER=imap.gmail.com
+EMAIL_ACCOUNT=your_email@gmail.com
+EMAIL_PASSWORD=your_app_password
+```
+
+---
+
+## How to Run
+
+### 1. Start Infrastructure
+
+Run Airflow, PostgreSQL, and Chroma DB with Docker Compose.
+
 ```bash
 docker compose up -d
 ```
-> 도커가 모두 실행되면 [http://localhost:8080](http://localhost:8080) 에 접속하여 Airflow UI를 확인할 수 있습니다. (기본 계정: `admin` / `admin`)
-> Airflow 내에서 `email_embedding_daily_job` DAG를 켜두거나 수동으로 Trigger(▶️)하여 오늘의 메일을 DB에 적재할 수 있습니다.
 
-### 2. 패키지 설치
-`uv`를 사용하여 프로젝트에 필요한 파이썬 라이브러리를 동기화합니다.
+After the containers are running, open the Airflow UI:
+
+```text
+http://localhost:8080
+```
+
+Default Airflow account:
+
+```text
+ID: admin
+Password: admin
+```
+
+Enable or manually trigger the DAG:
+
+```text
+email_embedding_daily_job
+```
+
+---
+
+### 2. Install Dependencies
+
 ```bash
 uv sync
 ```
 
-### 3. 메인 분석 앱 실행 (Streamlit UI)
-메일 목록을 불러오고 개별 분석 및 유사 메일 추천을 받을 수 있는 메인 대시보드입니다.
+---
+
+### 3. Run Main Streamlit App
+
 ```bash
 uv run streamlit run src/app.py
 ```
-> 실행 후 브라우저에서 `http://localhost:8501` 로 접속됩니다.
 
-### 4. Chroma DB 뷰어 실행 (선택 사항)
-Airflow가 수집하여 넣은 과거 메일 데이터와 임베딩 수치를 확인하고 싶을 때 실행하는 독립 뷰어입니다.
-```bash
-uv run streamlit run scripts/db_viewer.py
+Open the dashboard:
+
+```text
+http://localhost:8501
 ```
-> 실행 후 브라우저에서 `http://localhost:8502` 로 접속됩니다.
 
 ---
 
-## 📁 디렉토리 구조
+### 4. Run Chroma DB Viewer
+
+```bash
+uv run streamlit run scripts/db_viewer.py
+```
+
+Open the DB viewer:
+
+```text
+http://localhost:8502
+```
+
+---
+
+## Project Structure
+
 ```text
 .
 ├── dags/
-│   └── email_embedding_pipeline.py  # Airflow 배치 파이프라인
+│   └── email_embedding_pipeline.py
 ├── src/
-│   ├── app.py                       # 메인 Streamlit 앱
-│   ├── config.py                    # 환경 변수 및 설정 관리
-│   ├── db_client.py                 # Chroma DB 연결 클라이언트
-│   ├── email_client.py              # IMAP 메일 수집 클라이언트
-│   ├── pdf_parser.py                # PDF 텍스트 추출
-│   ├── summarizer.py                # Gemini API 요약 로직
-│   └── word_cloud_gen.py            # TF-IDF 기반 차트 생성
+│   ├── app.py
+│   ├── config.py
+│   ├── db_client.py
+│   ├── email_client.py
+│   ├── pdf_parser.py
+│   ├── summarizer.py
+│   └── word_cloud_gen.py
 ├── scripts/
-│   └── db_viewer.py                 # Chroma DB 조회 전용 대시보드
-├── docker-compose.yml               # 인프라(Airflow, Postgres, Chroma) 구성
-├── pyproject.toml                   # uv 패키지 의존성 파일
+│   └── db_viewer.py
+├── docker-compose.yml
+├── pyproject.toml
 └── README.md
 ```
+
+---
+
+## Expected Impact
+
+* Reduces repetitive email and PDF review time
+* Converts personal inbox data into reusable knowledge assets
+* Enables semantic search beyond simple keyword matching
+* Recommends similar historical business cases
+* Supports faster decision-making and knowledge reuse
+
+---
+
+## Vision
+
+This project aims to transform fragmented business emails into a unified organizational knowledge asset by integrating email ingestion, PDF extraction, LLM summarization, vector embedding, and semantic retrieval into a single automated pipeline.
