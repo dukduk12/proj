@@ -1,7 +1,8 @@
 # 📧 Business Email PDF Analysis & Recommendation System
 
-> **Project Presentation (PPT)**
-> [View Presentation Slides](https://docs.google.com/presentation/d/10cDAfyUDkmXcXXc1y-ilhWFxBKG5liBP/edit?usp=drive_link&ouid=117197231862834975531&rtpof=true&sd=true)
+> **Project Presentation (PPT)** : [View Presentation Slides](https://docs.google.com/presentation/d/10cDAfyUDkmXcXXc1y-ilhWFxBKG5liBP/edit?usp=drive_link&ouid=117197231862834975531&rtpof=true&sd=true)
+> 
+> **Demo Video**  : [Watch Demo Video](https://drive.google.com/file/d/1rtUoST3fyLVT2XfT4RQPpR-zUCX6546Y/view?usp=drive_link)
 
 ![Python](https://img.shields.io/badge/Python-3.12-blue)
 ![Streamlit](https://img.shields.io/badge/Streamlit-App-red)
